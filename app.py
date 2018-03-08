@@ -40,7 +40,17 @@ def index():
 def names():
     namedata = session.query(Samples_metadata.SAMPLEID).all()
     namelist = list(np.ravel(namedata))
-    return namelist
+    return jsonify(results=namelist.tolist())
+    # START HERE
+    # working on this app route, looks like flask
+    # doesn't want to return a pure list. Works fine
+    # if putting the list into a template and rendering,
+    # but not alone.
+
+    # also, the data appears to be in int64 type, which
+    # may require flask's JSONEncoder to interpret
+
+    # look in chapter 15 for how to return jsons
 
 if __name__ == '__main__':
     app.run(debug=True)
