@@ -40,17 +40,48 @@ def index():
 def names():
     namedata = session.query(Samples_metadata.SAMPLEID).all()
     namelist = list(np.ravel(namedata))
-    return jsonify(results=namelist.tolist())
-    # START HERE
-    # working on this app route, looks like flask
-    # doesn't want to return a pure list. Works fine
-    # if putting the list into a template and rendering,
-    # but not alone.
+    clean_namelist = []
+    for element in namelist:
+        clean_namelist.append("BB_" + str(element))
+    return jsonify(clean_namelist)
 
-    # also, the data appears to be in int64 type, which
-    # may require flask's JSONEncoder to interpret
+@app.route("/otu")
+def otus():
+    otudata = session.query(Otu.lowest_taxonomic_unit_found).all()
+    otulist = list(np.ravel(otudata))
+    return jsonify(otulist)
 
-    # look in chapter 15 for how to return jsons
+@app.route("/metadata/<sample>")
+def metadata(sample):
+    input_sample = int(sample.replace('BB_', ''))
+    sampledata = session.query(Samples_metadata).filter_by(SAMPLEID=input_sample).first()
+    return jsonify({"AGE": sampledata.AGE,
+                    "BBTYPE": sampledata.BBTYPE,
+                    "ETHNICITY": sampledata.ETHNICITY,
+                    "GENDER": sampledata.GENDER,
+                    "LOCATION": sampledata.LOCATION,
+                    "SAMPLEID": sampledata.SAMPLEID
+                    })
+
+@app.route("/wfreq/<sample>")
+def wfreq(sample):
+    input_sample = int(sample.replace('BB_', ''))
+    sampledata = session.query(Samples_metadata).filter_by(SAMPLEID=input_sample).first()
+    return jsonify(sampledata.WFREQ)
+
+@app.route("/samples/<sample>")
+def samples(sample):
+    input_sample = str(sample)
+    sampledata = session.query(Samples).order_by(getattr(Samples, input_sample).desc())
+    otu_list = []
+    value_list = []
+    for element in sampledata:
+        otu_list.append(str(np.ravel(element.otu_id)[0]))
+        value_list.append(str(np.ravel(getattr(element, input_sample))[0]))
+    return jsonify([{
+        "otu_ids": otu_list,
+        "sample_values": value_list
+    }])
 
 if __name__ == '__main__':
     app.run(debug=True)
