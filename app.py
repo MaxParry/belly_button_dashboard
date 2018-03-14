@@ -34,6 +34,10 @@ def index():
     # this page will eventually return dashboard homepage
     getback = session.query(Samples_metadata.ETHNICITY).all()
     response = list(np.ravel(getback))
+
+    # below will be the plotly plots
+    
+
     return render_template('index.html', test=response)
 
 @app.route("/names")
