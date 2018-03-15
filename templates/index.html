@@ -39,7 +39,7 @@
             </div>
             <div class="col-sm-5">
                 <div id="pie_chart">
-                    <p>{{ test }}</p>
+                    <!--<p>{{ test }}</p>-->
                 </div>
             </div>
             <div class="col-sm-5">
@@ -49,7 +49,7 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-12">
+            <div class="col">
                 <div id="bubble_plot">
 
                 </div>
@@ -74,7 +74,6 @@
     
     Plotly.d3.json(names_url, function(error, response){
         if (error) console.warn(error)
-        console.log("this is the iterable:  " + response)
         response.forEach(function(element){
 
             var select_box = document.getElementById('sample_select')
@@ -98,34 +97,64 @@
 
     Plotly.d3.json((samples_url + sample1), function(error, response) {
         if (error) console.warn(error)
-        var trace1 = {
+        var pietrace = {
             values: response[0].sample_values.slice(0,10),
             labels: response[0].otu_ids.slice(0,10),
             type: 'pie'
         }
 
-        var layout = {
+        var pielayout = {
             title: "Top 10 Bacteria in Sample " + sample1
         }
 
-        var data = [trace1]
+        var piedata = [pietrace]
 
-        Plotly.react('pie_chart', data, layout)
+        Plotly.newPlot('pie_chart', piedata, pielayout)
         
         // now call ltuf api with the otu_ids to get hovertext
         // and update plot
 
         Plotly.d3.json((ltuf_url + response[0].otu_ids.slice(0,10)), function(error, response){
             if (error) console.warn(error)
-
+            
             var update = {
-                hovertext: response
+                hovertext: [response]
             }
             Plotly.update('pie_chart', update)
             
         })
 
+        // Bubble Plot:
+
+        var bubbletrace = {
+            x: response[0].otu_ids,
+            y: response[0].sample_values,
+            mode: 'markers',
+            marker: {
+                size: response[0].sample_values,
+                color: response[0].otu_ids
+            }
+        }
+
+        var bubblelayout = {
+            title: 'Bubble Plot'
+        }
         
+        var bubbledata = [bubbletrace]
+
+        Plotly.react('bubble_plot', bubbledata, bubblelayout)
+
+        // now update plot with hovertext from second API call:
+
+        Plotly.d3.json((ltuf_url + response[0].otu_ids), function(error, response){
+            if (error) console.warn(error)
+            console.log(response)
+            var update = {
+                text: [response]
+            }
+            Plotly.update('bubble_plot', update)
+            
+        })
     })
 
     }
