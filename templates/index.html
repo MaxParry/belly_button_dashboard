@@ -69,11 +69,12 @@
     // it out later, browser is cacheing old copies if i 
     // separate it
 
-
+    // call api to get list of sample names for dropdown
     var names_url = 'http://127.0.0.1:5000/names'    
     
     Plotly.d3.json(names_url, function(error, response){
         if (error) console.warn(error)
+        // add an option for each name, add a value attribute
         response.forEach(function(element){
 
             var select_box = document.getElementById('sample_select')
@@ -84,85 +85,90 @@
             select_box.appendChild(this_element)
         })
     })
-
+    // main function to render plots, called on dropdown change
     function sampleCall(sample){
-
+        
+        var sample1 = sample
     
-    var sample1 = sample
-   
+        // base urls for API calls for top 10 otus in sample
+        // as well as base url for returning otu descriptions
+        var samples_url = 'http://127.0.0.1:5000/samples/'
+        var ltuf_url = 'http://127.0.0.1:5000/otu_search/'
 
-    var samples_url = 'http://127.0.0.1:5000/samples/'
-    var ltuf_url = 'http://127.0.0.1:5000/otu_search/'
-
-
-    Plotly.d3.json((samples_url + sample1), function(error, response) {
-        if (error) console.warn(error)
-        var pietrace = {
-            values: response[0].sample_values.slice(0,10),
-            labels: response[0].otu_ids.slice(0,10),
-            type: 'pie'
-        }
-
-        var pielayout = {
-            title: "Top 10 Bacteria in Sample " + sample1,
-            width: 500,
-            height: 500
-        }
-
-        var piedata = [pietrace]
-
-        Plotly.newPlot('pie_chart', piedata, pielayout)
-        
-        // now call ltuf api with the otu_ids to get hovertext
-        // and update plot
-
-        Plotly.d3.json((ltuf_url + response[0].otu_ids.slice(0,10)), function(error, response){
+        // call API to get sorted otu_ids and sorted sample_values
+        Plotly.d3.json((samples_url + sample1), function(error, response) {
             if (error) console.warn(error)
-            
-            var update = {
-                hovertext: [response]
+            var pietrace = {
+                // slice the first 10 (top 10) for pie chart
+                values: response[0].sample_values.slice(0,10),
+                labels: response[0].otu_ids.slice(0,10),
+                type: 'pie'
             }
-            Plotly.update('pie_chart', update)
+
+            var pielayout = {
+                title: "Top 10 Bacteria in Sample " + sample1,
+                width: 500,
+                height: 500
+            }
+
+            var piedata = [pietrace]
+            // plot it
+            Plotly.newPlot('pie_chart', piedata, pielayout)
             
+            // now call ltuf api with the otu_ids to get hovertext
+            // and update plot
+            // (api takes a list of samples, parses, and returns list
+            //  of descriptions of the supplied otu_ids)
+
+            Plotly.d3.json((ltuf_url + response[0].otu_ids.slice(0,10)), function(error, response){
+                if (error) console.warn(error)
+                
+                var update = {
+                    hovertext: [response]
+                }
+                Plotly.update('pie_chart', update)
+                
+            })
+
+            // Bubble Plot:
+
+            var bubbletrace = {
+                x: response[0].otu_ids.slice(0,50),
+                y: response[0].sample_values.slice(0,50),
+                mode: 'markers',
+                marker: {
+                    size: response[0].sample_values.slice(0,50),
+                    color: response[0].otu_ids.slice(0,50),
+                    colorscale: 'Earth'
+                }
+            }
+
+            var bubblelayout = {
+                title: 'Bubble Plot',
+                width: 1100,
+                height: 600
+            }
+            
+            var bubbledata = [bubbletrace]
+
+            Plotly.react('bubble_plot', bubbledata, bubblelayout)
+
+            // now update bubble plot with hovertext from second API call:
+
+            Plotly.d3.json((ltuf_url + response[0].otu_ids.slice(0,50)), function(error, response){
+                if (error) console.warn(error)
+                console.log(response)
+                var update = {
+                    text: [response]
+                }
+                Plotly.update('bubble_plot', update)
+                
+            })
         })
-
-        // Bubble Plot:
-
-        var bubbletrace = {
-            x: response[0].otu_ids,
-            y: response[0].sample_values,
-            mode: 'markers',
-            marker: {
-                size: response[0].sample_values,
-                color: response[0].otu_ids
-            }
-        }
-
-        var bubblelayout = {
-            title: 'Bubble Plot',
-            width: 1100,
-            height: 600
-        }
-        
-        var bubbledata = [bubbletrace]
-
-        Plotly.react('bubble_plot', bubbledata, bubblelayout)
-
-        // now update plot with hovertext from second API call:
-
-        Plotly.d3.json((ltuf_url + response[0].otu_ids), function(error, response){
-            if (error) console.warn(error)
-            console.log(response)
-            var update = {
-                text: [response]
-            }
-            Plotly.update('bubble_plot', update)
-            
-        })
-    })
 
     }
-
+    // initialize first rendering (Plotly.react allows both
+    // first time rendering and updating from same command)
     sampleCall('BB_940')
     
     
