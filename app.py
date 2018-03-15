@@ -55,6 +55,18 @@ def otus():
     otulist = list(np.ravel(otudata))
     return jsonify(otulist)
 
+@app.route("/otu_search/<idlist_string>")
+def otu_by_id(idlist_string):
+    idlist = idlist_string.replace('[', '').replace(']', '').replace("'", "").split(',')
+    
+    output = []
+    
+    for i in idlist:
+        otudata = session.query(Otu).filter_by(otu_id=int(i)).first()
+        match = otudata.lowest_taxonomic_unit_found
+        output.append(match)
+    return jsonify(output)
+
 @app.route("/metadata/<sample>")
 def metadata(sample):
     input_sample = int(sample.replace('BB_', ''))

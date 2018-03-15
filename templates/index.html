@@ -30,10 +30,6 @@
             <div class="col-sm-2">
                 <div id="select_card">
                     <select id="sample_select" onchange="sampleCall(this.value)">
-                        <option value="volvo">Volvo</option>
-                        <option value="saab">Saab</option>
-                        <option value="mercedes">Mercedes</option>
-                        <option value="audi">Audi</option>
                     </select>
 
                 </div>
@@ -72,32 +68,69 @@
     // here just doing the script inside html, will move
     // it out later, browser is cacheing old copies if i 
     // separate it
-    var sample1 = 'BB_940'
+
+
+    var names_url = 'http://127.0.0.1:5000/names'    
+    
+    Plotly.d3.json(names_url, function(error, response){
+        if (error) console.warn(error)
+        console.log("this is the iterable:  " + response)
+        response.forEach(function(element){
+
+            var select_box = document.getElementById('sample_select')
+            var this_element = document.createElement('option')
+            var inner_text = document.createTextNode(element)
+            this_element.setAttribute('value', element)
+            this_element.appendChild(inner_text)
+            select_box.appendChild(this_element)
+        })
+    })
+
+    function sampleCall(sample){
+
+    
+    var sample1 = sample
+   
+
     var samples_url = 'http://127.0.0.1:5000/samples/'
+    var ltuf_url = 'http://127.0.0.1:5000/otu_search/'
 
 
     Plotly.d3.json((samples_url + sample1), function(error, response) {
         if (error) console.warn(error)
-        console.log(response)
-        console.log(response[0].sample_values.slice(0,10))
-        console.log(response[0].otu_ids.slice(0,10))
-
         var trace1 = {
             values: response[0].sample_values.slice(0,10),
             labels: response[0].otu_ids.slice(0,10),
-            type: 'pie',
-            hovertext: // put phylum here, request api
+            type: 'pie'
         }
 
         var layout = {
-            title: "Top 10 Bacteria"
+            title: "Top 10 Bacteria in Sample " + sample1
         }
 
         var data = [trace1]
 
-        Plotly.plot('pie_chart', data, layout)
+        Plotly.react('pie_chart', data, layout)
+        
+        // now call ltuf api with the otu_ids to get hovertext
+        // and update plot
 
+        Plotly.d3.json((ltuf_url + response[0].otu_ids.slice(0,10)), function(error, response){
+            if (error) console.warn(error)
+
+            var update = {
+                hovertext: response
+            }
+            Plotly.update('pie_chart', update)
+            
+        })
+
+        
     })
+
+    }
+
+    sampleCall('BB_940')
     
     
     
